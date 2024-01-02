@@ -109,9 +109,9 @@ class FlowVisualiser:
         plt.axis(False)
         plt.show()
 
-    def visualiseOpticalFlow(self, flow, image = None, polar = True):
-        u = flow[:, :, 0].copy()
-        v = flow[:, :, 1].copy()
+    def visualiseOpticalFlow(self, flow, image = None, polar = True, normalise = True):
+        u = flow[:, :, 0]
+        v = flow[:, :, 1]
 
         hsv = np.zeros(shape = (u.shape[0], u.shape[1], 3), dtype = np.uint8)
 
@@ -119,9 +119,11 @@ class FlowVisualiser:
         if polar:
             mag, ang = cv2.cartToPolar(u, v)
             hsv[:, :, 0] = ang*180/np.pi/2
+            if normalise:
+                mag = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
             hsv[:, :, 1] = mag
 
-        bgr = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+            bgr = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
 
         if image is not None:
             alpha = 0.5
