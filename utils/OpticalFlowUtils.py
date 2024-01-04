@@ -133,3 +133,7 @@ class FlowVisualiser:
             bgr = cv2.addWeighted(image, alpha, bgr, beta, gamma)
         
         self.imshow(bgr)
+
+    def visualiseFlowError(self, groundTruth, predicted, image = None):
+        err = np.subtract(groundTruth, predicted)
+        self.visualiseOpticalFlow(flow=err, image=image)
