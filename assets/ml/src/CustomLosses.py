@@ -15,9 +15,9 @@ class EPE_Loss(tf.keras.losses.Loss):
         v_true = y_true[:, :, :, 1]
         v_pred = y_pred[:, :, :, 1]
 
-        alt_epe = tf.reduce_mean(tf.sqrt(tf.square(u_true - u_pred) + tf.square(v_true - v_pred)))
+        epe = tf.reduce_mean(tf.sqrt(tf.square(u_true - u_pred) + tf.square(v_true - v_pred)))
 
-        return alt_epe
+        return epe
 
     @tf.function
     def normedEPE(self, y_true, y_pred):
