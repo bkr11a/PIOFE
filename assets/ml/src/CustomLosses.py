@@ -50,7 +50,7 @@ class AE_Loss(tf.keras.losses.Loss):
         v_true = y_true[:, :, :, 1]
         v_pred = y_pred[:, :, :, 1]
         
-        angularError = tf.math.acos(( u_pred * u_true + v_pred * v_true +1.0)) / tf.sqrt( (tf.square(u_pred) + tf.square(v_pred) + 1.0)*(tf.square(u_true) + tf.square(v_true) + 1.0) )
+        angularError = tf.math.acos((u_pred * u_true + v_pred * v_true + 1.0)) / tf.sqrt( (tf.square(u_pred) + tf.square(v_pred) + 1.0)*(tf.square(u_true) + tf.square(v_true) + 1.0) )
         angularError = tf.reduce_mean(angularError)
 
         return angularError
