@@ -168,3 +168,4 @@ cython_debug/
 
 # Don't upload the data files
 /assets/data/
+/results/
