@@ -30,7 +30,7 @@ class MPISintelHandler:
         return arr
 
     def loadData(self, path):
-        with open(path) as f:
+        with open(path, 'rb') as f:
             arr = np.load(f)
 
         return arr
