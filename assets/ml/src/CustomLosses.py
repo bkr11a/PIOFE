@@ -43,6 +43,12 @@ class AE_Loss(tf.keras.losses.Loss):
         super().__init__(**kwargs)
 
     @tf.function
+    def __call__(self, y_true, y_pred):
+        angularError = self.call(y_true=y_true, y_pred=y_pred)
+
+        return angularError
+
+    @tf.function
     def call(self, y_true, y_pred):
         u_true = y_true[:, :, :, 0]
         u_pred = y_pred[:, :, :, 0]
