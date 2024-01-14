@@ -4,11 +4,12 @@ __version__ = 0.1
 import tensorflow as tf
 
 class ResidualFlowNET(tf.keras.Model):
-    def __init__(self, inputDim = (1,), outputDim = 1, numBlocks = 2, twoFrameInput = True, flowInput = False, **kwargs):
+    def __init__(self, numBlocks = 2, twoFrameInput = True, flowInput = False, **kwargs):
         super().__init__(**kwargs)
         
-        self.inputDim = inputDim
-        self.outputDim = outputDim
+        self.outputDim = (436, 1024, 2)
+        self.inputDim = (436, 1024, 1)
+        self.flowInputDim = (436, 1024, 2)
         
         self.twoFrameInput = twoFrameInput
         self.flowInput = flowInput
@@ -123,12 +124,12 @@ class ResidualFlowNET(tf.keras.Model):
         
         # Actually run through the network here!
         
-        Z = Z                                                               # Input Shape (n, 218, 512, 6) -> 2 678 784
+        Z = Z                                                               # Input Shape (n, 436, 1024, 1) -> 2 678 784
         print(f"Input Shape: {Z.shape}")
         
         # Preprocess layer here!
-        Z = self.preprocessConv(Z)                                          # Input Shape (n, 218, 512, 16) -> 7 143 424 
-        Z = self.preprocessMaxPool(Z)                                       # Input Shape (n, 109, 256, 16) -> 1 785 856 
+        Z = self.preprocessConv(Z)                                          # Input Shape (n, 436, 1024, 16) -> 7 143 424 
+        Z = self.preprocessMaxPool(Z)                                       # Input Shape (n, 218, 512, 16) -> 1 785 856 
         
         # Encoder - ResNET - Convolution -> Batch Normalisation -> Activation -> Convolution -> Batch Normalisation -> Addition w/identity -> Activation
         
@@ -140,11 +141,11 @@ class ResidualFlowNET(tf.keras.Model):
                     Z += self.conv1A(Y)
                     Z = layer(Z)
                 else:
-                    Z = layer(Z)                                            # Input Shape (n, 109, 256, 32) -> 3 571 712
+                    Z = layer(Z)                                            # Input Shape (n, 218, 512, 32) -> 3 571 712
                     
         print(f"ResBlockA Shape: {Z.shape}")
                     
-        Z = self.maxPoolA(Z)                                                # Input Shape (n, 54, 128, 32) -> 892 928
+        Z = self.maxPoolA(Z)                                                # Input Shape (n, 109, 256, 32) -> 892 928
         print(f"MaxPoolA Shape: {Z.shape}")
         
         # ResBlock B
@@ -155,10 +156,10 @@ class ResidualFlowNET(tf.keras.Model):
                     Z += self.conv1B(Y)
                     Z = layer(Z)
                 else:
-                    Z = layer(Z)                                            # Input Shape (n, 54, 128, 64) -> 1 785 856
+                    Z = layer(Z)                                            # Input Shape (n, 109, 256, 64) -> 1 785 856
                     
         print(f"ResBlockB Shape: {Z.shape}")
-        Z = self.maxPoolB(Z)                                                # Input Shape (n, 27, 64, 64) -> 442 368
+        Z = self.maxPoolB(Z)                                                # Input Shape (n, 54, 128, 64) -> 442 368
         print(f"MaxPoolB Shape: {Z.shape}")
         
         # ResBlock C
@@ -169,10 +170,10 @@ class ResidualFlowNET(tf.keras.Model):
                     Z += self.conv1C(Y)
                     Z = layer(Z)
                 else:
-                    Z = layer(Z)                                            # Input Shape (n, 27, 64, 128) -> 884 736
+                    Z = layer(Z)                                            # Input Shape (n, 54, 128, 128) -> 884 736
                     
         print(f"ResBlockC Shape: {Z.shape}")
-        Z = self.maxPoolC(Z)                                                # Input Shape (n, 13, 32, 128) -> 221 184
+        Z = self.maxPoolC(Z)                                                # Input Shape (n, 27, 64, 128) -> 221 184
         print(f"MaxPoolC Shape: {Z.shape}")
         
         # ResBlock D
@@ -183,11 +184,11 @@ class ResidualFlowNET(tf.keras.Model):
                     Z += self.conv1D(Y)
                     Z = layer(Z)
                 else:
-                    Z = layer(Z)                                            # Input Shape (n, 13, 32, 256) -> 442 368
+                    Z = layer(Z)                                            # Input Shape (n, 27, 64, 256) -> 442 368
                     
         print(f"ResBlockD Shape: {Z.shape}")
                     
-        Z = self.maxPoolD(Z)                                                # Input Shape (n, 6, 16, 256) -> 106 496
+        Z = self.maxPoolD(Z)                                                # Input Shape (n, 13, 32, 256) -> 106 496
         print(f"MaxPoolD Shape: {Z.shape}")
         
         # ResBlock E
@@ -198,11 +199,11 @@ class ResidualFlowNET(tf.keras.Model):
                     Z += self.conv1E(Y)
                     Z = layer(Z)
                 else:
-                    Z = layer(Z)                                            # Input Shape (n, 6, 16, 512) -> 212 992
+                    Z = layer(Z)                                            # Input Shape (n, 13, 32, 512) -> 212 992
                     
         print(f"ResBlockE Shape: {Z.shape}")
                     
-        Z = self.maxPoolE(Z)                                                # Input Shape (n, 3, 8, 512) -> 49 152
+        Z = self.maxPoolE(Z)                                                # Input Shape (n, 6, 16, 512) -> 49 152
         print(f"MaxPoolE Shape: {Z.shape}")
         
         # Decoder!
@@ -210,62 +211,64 @@ class ResidualFlowNET(tf.keras.Model):
         # Should this be done as a standard upscaled convolutional network or analoguous to the resnet architecture?
         # First pass is a standard convolutional decoder mapped to the optical flow outputs
         
-        Z = self.conv256(Z)  # (n, 3, 8, 256)
+        Z = self.conv256(Z)  # (n, 6, 16, 256)
         Z = self.bnA(Z)
         Z = tf.keras.layers.LeakyReLU(alpha=0.01)(Z)
         print(f"DecoderA Shape: {Z.shape}")
-        Z = self.upSampleA(Z)                                  # (n, 6, 16, 256)
+        Z = self.upSampleA(Z)                                  # (n, 12, 32, 256)
         print(f"UpSampleA Shape: {Z.shape}")
+
+        # Pad to correct the size - (need (n, 13, 32, 256))
+        paddings = ((0, 0), (0, 1), (0, 0), (0, 0))
+        Z = tf.pad(Z, paddings)                                                             # (n, 13, 32, 256)
         
-        Z = self.conv128(Z)  # (n, 6, 16, 128)
+        print(f"After Padding Shape: {Z.shape}")
+        
+        Z = self.conv128(Z)  # (n, 13, 32, 128)
         Z = self.bnB(Z)
         Z = tf.keras.layers.LeakyReLU(alpha=0.01)(Z)
         print(f"DecoderB Shape: {Z.shape}")
-        Z = self.upSampleB(Z)                                  # (n, 12, 32, 128)
+        Z = self.upSampleB(Z)                                  # (n, 26, 64, 128)
         print(f"UpSampleB Shape: {Z.shape}")
-        
-        # Pad to correct the size - (need (n, 13, 32, 256))
+
+        # Pad to correct the size - (need (n, 27, 64, 128))
         paddings = ((0, 0), (0, 1), (0, 0), (0, 0))
-        Z = tf.pad(Z, paddings)                                                             # (n, 13, 32, 128)
-        
+        Z = tf.pad(Z, paddings)                                                             # (n, 27, 64, 128)
+
         print(f"After Padding Shape: {Z.shape}")
         
-        Z = self.conv64(Z)   # (n, 13, 32, 64)
+        Z = self.conv64(Z)   # (n, 27, 64, 128)
         Z = self.bnC(Z)
         Z = tf.keras.layers.LeakyReLU(alpha=0.01)(Z)
         print(f"DecoderC Shape: {Z.shape}")
-        Z = self.upSampleC(Z)                                  # (n, 26, 64, 64)
+        Z = self.upSampleC(Z)                                  # (n, 54, 128, 64)
         print(f"UpSampleC Shape: {Z.shape}")
         
-        # Pad to correct the size - (need (n, 27, 64, 128))
-        paddings = ((0, 0), (0, 1), (0, 0), (0, 0))
-        Z = tf.pad(Z, paddings)                                                             # (n, 27, 64, 64)
-        print(f"After Padding Shape: {Z.shape}")
-        
-        Z = self.conv32(Z)   # (n, 27, 64, 32)
+        Z = self.conv32(Z)   # (n, 54, 128, 32)
         Z = self.bnD(Z)
         Z = tf.keras.layers.LeakyReLU(alpha=0.01)(Z)
         print(f"DecoderD Shape: {Z.shape}")
-        Z = self.upSampleD(Z)                                  # (n, 54, 128, 32)
+        Z = self.upSampleD(Z)                                  # (n, 108, 256, 32)
         print(f"UpSampleD Shape: {Z.shape}")
-        
-        Z = self.conv16(Z)   # (n, 54, 128, 16)
-        Z = self.bnE(Z)
-        Z = tf.keras.layers.LeakyReLU(alpha=0.01)(Z)
-        print(f"DecoderE Shape: {Z.shape}")
-        Z = self.upSampleE(Z)                                  # (n, 108, 128, 16)
-        print(f"UpSampleE Shape: {Z.shape}")
         
         # Pad to correct the size - (need (n, 109, 256, 32))
         paddings = ((0, 0), (0, 1), (0, 0), (0, 0))
         Z = tf.pad(Z, paddings)                                                             # (n, 109, 256, 16)
+
         print(f"After Padding Shape: {Z.shape}")
         
-        Z = self.conv8(Z)   # (n, 109, 256, 8)
+        Z = self.conv16(Z)   # (n, 109, 256, 16)
+        Z = self.bnE(Z)
+        Z = tf.keras.layers.LeakyReLU(alpha=0.01)(Z)
+        print(f"DecoderE Shape: {Z.shape}")
+        Z = self.upSampleE(Z)                                  # (n, 218, 512, 16)
+        print(f"UpSampleE Shape: {Z.shape}")
+        
+        Z = self.conv8(Z)   # (n, 218, 512, 8)
         Z = self.bnF(Z)
         Z = tf.keras.layers.LeakyReLU(alpha=0.01)(Z)
         print(f"DecoderF Shape: {Z.shape}")
-        Z = self.upSampleF(Z)                                  # (n, 218, 512, 8)
+        Z = self.upSampleF(Z)                                  # (n, 436, 1024, 8)
         print(f"UpSampleF Shape: {Z.shape}")
         
         # Output
