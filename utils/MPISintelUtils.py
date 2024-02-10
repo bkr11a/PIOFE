@@ -4,6 +4,7 @@ __version__ = 0.1
 import os
 import cv2
 import numpy as np
+from tqdm import tqdm
 
 from utils.OpticalFlowUtils import FlowReader
 
@@ -20,11 +21,50 @@ class MPISintelHandler:
 
         return data
 
+    def saveDict(self, path, dictionary):
+        pass
+
+    def loadDict(self, path):
+        pass
+
+    def splitTrainTestVal(self, dictionary, trainSplit = 0.5, testSplit = 0.3, valSplit = 0.2):
+        assert trainSplit >= 0, "Non-negative values for train split ratio"
+        assert testSplit >= 0, "Non-negative values for test split ratio"
+        assert valSplit >= 0, "Non-negative values for validation split ratio"
+        assert trainSplit + testSplit + valSplit == 1, "Total split percentage must total to a value of 1"
+
+        keys = [key for key in dictionary]
+
+        trainNumKey0 = int(trainSplit*dictionary[keys[0]].shape[0])
+        trainNumKey1 = int(trainSplit*dictionary[keys[1]].shape[0])
+        
+        testNumKey0 = int(testSplit*dictionary[keys[0]].shape[0]) + trainNumKey0
+        testNumKey1 = int(testSplit*dictionary[keys[1]].shape[0]) + testNumKey1
+        
+        valNumKey0 = testNumKey0 - dictionary[keys[0]].shape[0]
+        valNumKey1 = testNumKey1 - dictionary[keys[1]].shape[0]
+
+        train = np.vstack([dictionary[keys[0]][0:trainNumKey0], dictionary[keys[1]][0:trainNumKey1]])
+        test = np.vstack([dictionary[keys[0]][trainNumKey0:testNumKey0], dictionary[keys[1]][trainNumKey1:testNumKey1]])
+        val = np.vstack([dictionary[keys[0]][valNumKey0:], dictionary[keys[1]][valNumKey1:]])
+
+        for i in tqdm(range(2, len(keys)), desc = "Spliting Data", ncols = 90):
+            trainNumKey = int(trainSplit*dictionary[keys[i]].shape[0])
+            testNumKey = int(testSplit*dictionary[keys[i]].shape[0]) + trainNumKey
+            valNumKey = testNumKey - dictionary[keys[i]].shape[0]
+
+            train = np.vstack([train, dictionary[keys[i]][0:trainNumKey]])
+            test = np.vstack([test, dictionary[keys[i]][trainNumKey:testNumKey]])
+            val = np.vstack([val, dictionary[keys[i]][valNumKey:]])
+
+        return train, test, val
+
+
     def dictToNumpy(self, dictionary):
         keys = [k for k in dictionary]
 
         arr = np.vstack([dictionary[keys[0]], dictionary[keys[1]]])
-        for i in range(2, len(keys)):
+        for i in tqdm(range(2, len(keys)), desc = "Unpacking Dictionary", ncols = 90):
             arr = np.vstack([arr, dictionary[keys[i]]])
 
         return arr
