@@ -39,7 +39,7 @@ class MPISintelHandler:
         trainNumKey1 = int(trainSplit*dictionary[keys[1]].shape[0])
         
         testNumKey0 = int(testSplit*dictionary[keys[0]].shape[0]) + trainNumKey0
-        testNumKey1 = int(testSplit*dictionary[keys[1]].shape[0]) + testNumKey1
+        testNumKey1 = int(testSplit*dictionary[keys[1]].shape[0]) + trainNumKey1
         
         valNumKey0 = testNumKey0 - dictionary[keys[0]].shape[0]
         valNumKey1 = testNumKey1 - dictionary[keys[1]].shape[0]
