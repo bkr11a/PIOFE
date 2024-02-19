@@ -13,13 +13,13 @@ class FlowRefinerConvNet(tf.keras.Model):
         self.inputDim = (436, 1024, 1)
         self.flowInputDim = (436, 1024, 2)
 
-        self.hidden = [tf.keras.layers.Conv2D(filters = 32, kernel_size = (3, 3), padding='same', activation = tf.keras.layers.LeakyReLU(alpha=0.01)),
+        self.hidden = [tf.keras.layers.Conv2D(filters = 16, kernel_size = (3, 3), padding='same', activation = tf.keras.layers.LeakyReLU(alpha=0.01)),
                        tf.keras.layers.MaxPool2D(pool_size = (2, 2), strides = None, padding = 'same'),
-                       tf.keras.layers.Conv2D(filters = 64, kernel_size = (3, 3), padding='same', activation = tf.keras.layers.LeakyReLU(alpha=0.01)),
-                       tf.keras.layers.Conv2D(filters = 128, kernel_size = (3, 3), padding='same', activation = tf.keras.layers.LeakyReLU(alpha=0.01)),
-                       tf.keras.layers.Conv2D(filters = 64, kernel_size = (3, 3), padding='same', activation = tf.keras.layers.LeakyReLU(alpha=0.01)),
+                       tf.keras.layers.Conv2D(filters = 32, kernel_size = (3, 3), padding='same', activation = tf.keras.layers.LeakyReLU(alpha=0.01)),
+                       tf.keras.layers.Conv2D(filters = 32, kernel_size = (3, 3), padding='same', activation = tf.keras.layers.LeakyReLU(alpha=0.01)),
+                       tf.keras.layers.Conv2D(filters = 32, kernel_size = (3, 3), padding='same', activation = tf.keras.layers.LeakyReLU(alpha=0.01)),
                        tf.keras.layers.UpSampling2D(size = (2, 2)),
-                       tf.keras.layers.Conv2D(filters = 32, kernel_size = (3, 3), padding='same', activation = tf.keras.layers.LeakyReLU(alpha=0.01))]
+                       tf.keras.layers.Conv2D(filters = 16, kernel_size = (3, 3), padding='same', activation = tf.keras.layers.LeakyReLU(alpha=0.01))]
 
         self.out = tf.keras.layers.Conv2D(filters = 2, kernel_size = (3, 3), padding='same', activation = tf.keras.layers.LeakyReLU(alpha=0.01))                    
         # Whatever we need here!
